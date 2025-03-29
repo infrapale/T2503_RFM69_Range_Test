@@ -1,12 +1,15 @@
 #ifndef __MAIN_H__
 #define __MAIN_H__
-//#include "WString.h"
+
+#define BASE_APPLICATION
+//#define REMOTE_APPLICATION
 
 //#define DEBUG_PRINT 
 //#define SEND_TEST_MSG 
 //#define ADA_M0_RFM69
 //#define ADA_RFM69_WING
 #define PRO_MINI_RFM69
+
 #include <Arduino.h>
 #include "rfm69.h"
 #if defined(ADA_M0_RFM69) | defined(ADA_RFM69_WING)

@@ -5,6 +5,17 @@
 #include "rfm_send.h"
 #include "io.h"
 
+#ifdef BASE_APPLICATION
+#define  FRAME_START  ('<')
+#define  FRAME_END    ('>')
+#endif
+
+#ifdef REMOTE_APPLICATION
+#define FRAME_START   '['
+#define FRAME_END     ']'
+#endif
+
+
 uart_msg_st         uart;
 
 uart_msg_st *uart_get_data_ptr(void)
@@ -40,16 +51,33 @@ void uart_report_radio_msg(char *radio_receive_msg, int rssi)
     String msg_str = radio_receive_msg;
     // Serial.print(msg_str); Serial.print(" - "); Serial.println(rssi);
     msg_str.trim();
-    if ((msg_str.charAt(0) == '<') || 
-        (msg_str.charAt(msg_str.length()-1) == '>')) 
+    if ((msg_str.charAt(0) == FRAME_START) || 
+        (msg_str.charAt(msg_str.length()-1) == FRAME_END)) 
     {
         uint8_t end_pos = msg_str.indexOf('>');
-        String str = msg_str.substring(0,end_pos-1);
-        str += ",S,";
-        str += rssi;
-        str += ",>";
-        Serial.println(str);
+        String str = msg_str.substring(0,end_pos+1);
+        
+        uint8_t base_tag   = str.indexOf('S');
+        uint8_t remote_tag = str.indexOf('T');
+
+        #ifdef BASE_APPLICATION
+        String str1 = str.substring(0,base_tag-1);
+        str1 += ",S,";
+        str1 += rssi;
+        str1 += str.substring(remote_tag-1);
+        #endif
+        #ifdef REMOTE_APPLICATION
+        String str1 = str.substring(0,remote_tag-1);
+        str1 += ",T,";
+        str1 += rssi;
+        str1 += ",>";
+        #endif
+        Serial.println(str1);
+    
+    
+    
     } 
+
 
 }
 
