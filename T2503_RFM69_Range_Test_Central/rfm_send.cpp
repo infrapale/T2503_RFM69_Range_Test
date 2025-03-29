@@ -27,7 +27,9 @@ void rfm_send_radiate_msg( char *radio_msg )
     if (radio_msg[0] != 0)
     {
         #ifdef DEBUG_PRINT
+        Serial.print("rfm_send_radiate_msg: ");
         Serial.println(radio_msg);
+        Serial.println( strlen(radio_msg));
         #endif
         rf69p->waitPacketSent();
         rf69p->send((uint8_t *)radio_msg, strlen(radio_msg));      

@@ -31,7 +31,8 @@ typedef struct
     uart_cmd_et     cmd;
     msg_format_et   format;
     //msg_format_et   cmd_format;
-    msg_status_et   status;
+    uart_rx_status_et   status;
+    radio_et        radio;
 } uart_rx_st;
 
 typedef struct
@@ -69,6 +70,8 @@ typedef struct
 void uart_initialize(void);
 
 void uart_report_radio_msg(char *radio_receive_msg, int rssi);
+
+void uart_rx_send_rfm_from_raw(void);
 
 /// @brief  Get pointer to module data
 /// @param

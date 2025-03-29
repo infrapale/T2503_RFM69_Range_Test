@@ -46,7 +46,6 @@ void rfm_receive_message(void)
                 receive_msg.rssi = rf69p->lastRssi();
                 if (receive_msg.len >= MAX_MESSAGE_LEN) receive_msg.len = MAX_MESSAGE_LEN -1;
                 receive_msg.radio_msg[receive_msg.len] = 0;
-                Serial.println((char*)receive_msg.radio_msg); 
                 uart_report_radio_msg((char*)receive_msg.radio_msg, rf69p->lastRssi());
                 #ifdef DEBUG_PRINT
                 Serial.print("Received [");Serial.print(receive_msg.len);Serial.print("]: ");

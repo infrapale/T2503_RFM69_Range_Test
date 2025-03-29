@@ -19,8 +19,25 @@
 #define TASK_NBR_OF  6
 // #define LED_INDICATION
 
+typedef enum
+{
+    UNDEFINED = 0,
+    LORA_433 = 1,
+    LORA_868 = 2,
+    RFM_433  = 3,
+} radio_et;
+
+
+typedef enum
+{
+    UART_RX_MSG_UNDEFINED = 0,
+    UART_RX_MSG_ACK_TO_REMOTE,
+    UART_RX_MSG_TO_LOGGER
+ } uart_rx_status_et;
+
 typedef struct
 {
+    radio_et        radio;
     char            module;
     char            addr;         
 } module_data_st;
@@ -42,6 +59,7 @@ typedef enum
     STATUS_CORRECT_FRAME,
     STATUS_INCORRECT_FRAME,
 } msg_status_et;
+
 
 
 extern module_data_st     me;
