@@ -38,8 +38,19 @@ void uart_read_uart(void)
 void uart_report_radio_msg(char *radio_receive_msg, int rssi)
 {
     String msg_str = radio_receive_msg;
-    Serial.print(msg_str); Serial.print(" - ");
-    Serial.println(rssi);
+    // Serial.print(msg_str); Serial.print(" - "); Serial.println(rssi);
+    msg_str.trim();
+    if ((msg_str.charAt(0) == '<') || 
+        (msg_str.charAt(msg_str.length()-1) == '>')) 
+    {
+        uint8_t end_pos = msg_str.indexOf('>');
+        String str = msg_str.substring(0,end_pos-1);
+        str += ",S,";
+        str += rssi;
+        str += ",>";
+        Serial.println(str);
+    } 
+
 }
 
 void uart_parse_rx_frame(void)
@@ -49,144 +60,73 @@ void uart_parse_rx_frame(void)
     uint8_t len;
     uart.rx.str.trim();
     uart.rx.len = uart.rx.str.length();
-    if ((uart.rx.str.charAt(0) != '<') || 
-        (uart.rx.str.charAt(1) != '#') || 
-        (uart.rx.str.charAt(5) != ':') || 
-        (uart.rx.str.charAt(uart.rx.len-1) != '>'))  do_continue = false;
+    uart.rx.status = UART_RX_MSG_UNDEFINED;
+
+    if (uart.rx.len < 20)  do_continue = false;
+    if (do_continue)
+    {
+        uint16_t radio_pos = uart.rx.str.indexOf('R') + 2;
+        uart.rx.radio =  uart.rx.str.charAt(radio_pos) - '0';
+        #ifdef DEBUG_PRINT
+        Serial.print("Radio ="); Serial.println(uart.rx.radio);
+        #endif
+    }
+    if (do_continue)
+    {
+        if ((uart.rx.str.charAt(0) == '[') || 
+            (uart.rx.str.charAt(uart.rx.len-1) == ']'))  
+        {
+            uart.rx.status = UART_RX_MSG_ACK_TO_REMOTE;
+        }
+        else if ((uart.rx.str.charAt(0) == '!') || 
+            (uart.rx.str.charAt(uart.rx.len-1) == '!'))
+        {
+            uart.rx.status = UART_RX_MSG_TO_LOGGER;
+        }
+        else do_continue = false;
+    }
+ 
     if (do_continue)
     {   
+
+
         #ifdef DEBUG_PRINT
         Serial.print("Buffer frame is OK\n");
+        Serial.print("RX Status = "); Serial.println(uart.rx.status);
         #endif
-
-        uart.rx.status = STATUS_CORRECT_FRAME;
-        if ((uart.rx.str.charAt(6)  == '{') && 
-            (uart.rx.str.charAt(uart.rx.len-2) == '}'))
-        {
-            uart.rx.format = MSG_FORMAT_SENSOR_JSON;
-        } 
-        else 
-        {
-            uart.rx.format = MSG_FORMAT_RAW;
-        }   
-        uart.rx.module  = uart.rx.str.charAt(2);
-        uart.rx.addr    = uart.rx.str.charAt(3);
-        uart.rx.cmd     = (uart_cmd_et)uart.rx.str.charAt(4);
-
-        if((uart.rx.module == me.module) && (uart.rx.addr == me.addr))
-            uart.rx.status = STATUS_OK_FOR_ME;
-        else 
-            uart.rx.status = STATUS_NOT_FOR_ME;
     }
-    else uart.rx.status = STATUS_INCORRECT_FRAME;
-}
-
-void uart_build_node_from_rx_str(void)
-{
-    uint8_t indx1;
-    uint8_t indx2;
-    indx1 = 0;  //uart.rx.str.indexOf(':')
-    indx2 = uart.rx.str.indexOf(';');
-    uart.node.zone = uart.rx.str.substring(indx1,indx2);
-    indx1 = indx2+1;
-    indx2 = uart.rx.str.indexOf(';',indx1+1);
-    uart.node.name = uart.rx.str.substring(indx1,indx2);
-    indx1 = indx2+1;
-    indx2 = uart.rx.str.indexOf(';',indx1+1);
-    uart.node.value = uart.rx.str.substring(indx1,indx2);
-    indx1 = indx2+1;
-    indx2 = uart.rx.str.indexOf(';',indx1+1);
-    uart.node.remark = uart.rx.str.substring(indx1,indx2);
-    indx1 = indx2+1;
-    indx2 = uart.rx.str.indexOf(';',indx1+1);
-    
 }
 
 
 
 
-
-void uart_build_node_tx_str(void)
-{
-    rfm_receive_msg_st *receive_p = rfm_receive_get_data_ptr();
-    // <#X1N:RMH1;RKOK1;T;->\n   -> {"Z":"MH1","S":"RKOK1","V":"T","R":"-"}
-    uart.rx.str = (char*) receive_p->radio_msg;  
-    uart.tx.str = "<#X1a:";
-    json_pick_data_from_rx(&uart);
-    #ifdef DEBUG_PRINT
-    Serial.print("radio_msg: ");
-    Serial.println(uart.rx.str);  
-    Serial.println(uart.node.zone);
-    Serial.println(uart.node.name);
-    Serial.println(uart.node.value);
-    Serial.println(uart.node.remark);
-    #endif
-    uart.tx.str += uart.node.zone;
-    uart.tx.str += ';';
-    uart.tx.str += uart.node.name;
-    uart.tx.str += ';';
-    uart.tx.str += uart.node.value;
-    uart.tx.str += ';';
-    uart.tx.str += uart.node.remark;
-    uart.tx.str += '>';
-}
-
-void uart_build_raw_tx_str(void)
-{
-    rfm_receive_msg_st *receive_p = rfm_receive_get_data_ptr();
-    uart.tx.str = "<#X1r:";
-    uart.tx.str += (char*) receive_p->radio_msg;
-    uart.tx.str += '>';
-}
 
 void uart_rx_send_rfm_from_raw(void)
 {
-    String payload = uart.rx.str.substring(6,uart.rx.len - 1);
+    //String payload = uart.rx.str.substring(6,uart.rx.len - 1);
+    String payload = uart.rx.str;
+    #ifdef DEBUG_PRINT
+    Serial.print("Befor trim ");
+    Serial.println(payload.length());
+    #endif
+    payload.trim();
+    #ifdef DEBUG_PRINT
+    Serial.print("After trim ");
+    Serial.println(payload.length());
+    #endif
+    memset(uart.rx.radio_msg,0x00, MAX_MESSAGE_LEN);
     payload.toCharArray(uart.rx.radio_msg, MAX_MESSAGE_LEN);
+    #ifdef DEBUG_PRINT
+    Serial.println(payload);
+    Serial.print("char array: ");
+    Serial.println(uart.rx.radio_msg);
+    #endif
     rfm_send_radiate_msg(uart.rx.radio_msg);
 }
 
-void uart_rx_send_rfm_from_node(void)
-{
-    uart.rx.str = uart.rx.str.substring(6,uart.rx.len - 1);
-    uart_build_node_from_rx_str();
-    rfm_send_msg_st *send_p = rfm_send_get_data_ptr();
-    json_convert_uart_node_to_json(send_p->radio_msg, &uart);
-    rfm_send_radiate_msg(send_p->radio_msg);
-}
 
-void uart_exec_cmnd(uart_cmd_et ucmd)
-{
-    String str = "<#Xux:0>";
-    str[3] = me.addr;
-    switch(ucmd)
-    {
-        case UART_CMD_TRANSMIT_RAW:
-            io_led_flash(LED_INDX_RED, 10);
-            uart_rx_send_rfm_from_raw();
-            break;
-        case UART_CMD_TRANSMIT_NODE:
-            io_led_flash(LED_INDX_RED, 20);
-            uart_rx_send_rfm_from_node();
-            break;
-        case UART_CMD_GET_AVAIL:
-            str[4] = UART_REPLY_AVAILABLE;
-            if(rfm_receive_message_is_avail()) str[6] = '1';
-            SerialX.println(str);
-            break;
-        case UART_CMD_READ_RAW:
-            rfm_receive_clr_message_flag();
-            uart_build_raw_tx_str();
-            SerialX.println(uart.tx.str);          
-            break;
-        case UART_CMD_READ_NODE:
-            rfm_receive_clr_message_flag();
-            uart_build_node_tx_str();
-            SerialX.println(uart.tx.str);          
-          break;
 
-    }
-}
+
 
 
 void uart_print_rx_metadata(void)

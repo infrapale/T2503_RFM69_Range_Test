@@ -98,6 +98,13 @@ Relay Node Rx Mesage:   <#X1N:RMH1;RKOK1;T;->
 Relay Mesage      <#R12=x>   x:  0=off, 1=on, T=toggle
 
 *******************************************************************************
+<,R,1,P,10,N,42,S,-69,>
+[,R,1,P,10,N,42,S,-169,]
+
+!,<,R,1,P,10,N,42,S,-69,>,!
+
+<,R,1,P,10,N,233,T,-88,> - -57
+*******************************************************************************
 **/
 
 #include <Arduino.h>
@@ -127,7 +134,7 @@ Relay Mesage      <#R12=x>   x:  0=off, 1=on, T=toggle
 
 RH_RF69         rf69(RFM69_CS, RFM69_INT);
 RH_RF69         *rf69p;
-module_data_st  me = {'X','1'};
+module_data_st  me = {RFM_433, 'X','1'};
 
 
 #define NBR_TEST_MSG  4
@@ -176,7 +183,6 @@ void initialize_tasks(void)
   #ifdef SEND_TEST_MSG
   atask_add_new(&send_test_data_handle);
   #endif
-  Serial.print("Tasks initialized "); Serial.println(TASK_NBR_OF);
 }
 
 
@@ -187,9 +193,11 @@ void setup()
     Serial.begin(9600);
     //SerialX.begin(9600);
 
+    #ifdef DEBUG_PRINT 
     Serial.print("T2501_RFM69_BT_Monitor"); Serial.print(" Compiled: ");
     Serial.print(__DATE__); Serial.print(" ");
     Serial.print(__TIME__); Serial.println();
+    #endif
     //watchdog_initialize(8000);
 
     
@@ -212,8 +220,6 @@ void setup()
     #ifdef PRO_MINI_RFM69
     //watchdog.set_timeout(4);
     #endif
-
-    SerialX.println("Bluetooth Relay");
 }
 
 
@@ -236,9 +242,19 @@ void rfm_receive_task(void)
         Serial.println(uart_p->rx.str);
         uart_print_rx_metadata();
         #endif
-        if ( uart_p->rx.status == STATUS_OK_FOR_ME)
+        switch( uart_p->rx.status)
         {
-            uart_exec_cmnd(uart_p->rx.cmd);
+            case UART_RX_MSG_UNDEFINED:
+                break;
+            case UART_RX_MSG_ACK_TO_REMOTE:
+                if (uart_p->rx.radio == me.radio)
+                  uart_rx_send_rfm_from_raw();
+                break;
+            case UART_RX_MSG_TO_LOGGER:
+                uart_rx_send_rfm_from_raw();
+                break;
+           
+
         }
         uart_p->rx.avail = false;
     }
