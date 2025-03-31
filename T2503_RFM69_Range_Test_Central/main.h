@@ -1,10 +1,9 @@
 #ifndef __MAIN_H__
 #define __MAIN_H__
 
-#define BASE_APPLICATION
-//#define REMOTE_APPLICATION
 
 //#define DEBUG_PRINT 
+
 //#define SEND_TEST_MSG 
 //#define ADA_M0_RFM69
 //#define ADA_RFM69_WING
@@ -18,9 +17,28 @@
 #define SerialX Serial
 #endif
 
-#define APP_NAME    ((char*)"T2503_RFM69_Range_Test_Central")
+
+#define APP_NAME    ((char*)"T2503_RFM69_Range_Test")
+
 #define TASK_NBR_OF  6
 // #define LED_INDICATION
+
+typedef enum
+{
+    NODE_TYPE_UNDEFINED = 0,
+    NODE_TYPE_BASE,
+    NODE_TYPE_REMOTE
+} node_type_et;
+
+typedef enum
+{
+    MSG_UNDEFINED           = '-',
+    MSG_SET_BASE_NODE       = 'X',
+    MSG_ACK_BASE_TO_REMOTE  = 'Y',
+    MSG_SEND_BASE_TO_LOGGER = 'Z',
+    MSG_SET_REMOTE_NODE     = 'A',
+    MSG_SEND_REMOTE_TO_BASE = 'B',
+} msg_type_et;
 
 typedef enum
 {
@@ -31,15 +49,9 @@ typedef enum
 } radio_et;
 
 
-typedef enum
-{
-    UART_RX_MSG_UNDEFINED = 0,
-    UART_RX_MSG_ACK_TO_REMOTE,
-    UART_RX_MSG_TO_LOGGER
- } uart_rx_status_et;
-
 typedef struct
 {
+    node_type_et   node_type;
     radio_et        radio;
     char            module;
     char            addr;         

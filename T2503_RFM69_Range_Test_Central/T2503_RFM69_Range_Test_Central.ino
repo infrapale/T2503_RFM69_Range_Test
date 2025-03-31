@@ -98,12 +98,20 @@ Relay Node Rx Mesage:   <#X1N:RMH1;RKOK1;T;->
 Relay Mesage      <#R12=x>   x:  0=off, 1=on, T=toggle
 
 *******************************************************************************
-<,R,1,P,10,N,42,S,-69,>
-[,R,1,P,10,N,42,S,-169,]
+    MSG_UNDEFINED           = '-',
+    MSG_SET_BASE_NODE       = 'X',
+    MSG_ACK_BASE_TO_REMOTE  = 'Y',
+    MSG_SEND_BASE_TO_LOGGER = 'Z',
+    MSG_SET_REMOTE_NODE     = 'A',
+    MSG_SEND_REMOTE_TO_BASE = 'B',
 
-!,<,R,1,P,10,N,42,S,-69,>,!
+<,A,R,1,P,10,N,42,S,-69,T,0,>
+<,X,R,1,P,10,N,42,S,-69,T,0,>
 
-<,R,1,P,10,N,233,T,-88,> - -57
+<,Y,R,1,P,10,N,42,S,-69,T,0,>
+<,Y,R,3,P,14,N,42,S,-69,T,0,>
+<,Z,R,1,P,10,N,42,S,-69,T,0,>
+
 *******************************************************************************
 **/
 
@@ -134,7 +142,10 @@ Relay Mesage      <#R12=x>   x:  0=off, 1=on, T=toggle
 
 RH_RF69         rf69(RFM69_CS, RFM69_INT);
 RH_RF69         *rf69p;
-module_data_st  me = {RFM_433, 'X','1'};
+
+
+module_data_st  me = {NODE_TYPE_UNDEFINED, RFM_433, 'X','1'};
+
 
 
 #define NBR_TEST_MSG  4
@@ -194,7 +205,7 @@ void setup()
     //SerialX.begin(9600);
 
     #ifdef DEBUG_PRINT 
-    Serial.print("T2501_RFM69_BT_Monitor"); Serial.print(" Compiled: ");
+    Serial.print(APP_NAME); Serial.print(F(" Compiled: "));
     Serial.print(__DATE__); Serial.print(" ");
     Serial.print(__TIME__); Serial.println();
     #endif
@@ -242,19 +253,21 @@ void rfm_receive_task(void)
         Serial.println(uart_p->rx.str);
         uart_print_rx_metadata();
         #endif
-        switch( uart_p->rx.status)
+        switch( uart_p->rx.msg_type)
         {
-            case UART_RX_MSG_UNDEFINED:
+            case MSG_SET_BASE_NODE:
+                me.node_type = NODE_TYPE_BASE;
                 break;
-            case UART_RX_MSG_ACK_TO_REMOTE:
-                if (uart_p->rx.radio == me.radio)
-                  uart_rx_send_rfm_from_raw();
+            case MSG_SET_REMOTE_NODE:
+                me.node_type = NODE_TYPE_REMOTE;
                 break;
-            case UART_RX_MSG_TO_LOGGER:
+            case MSG_ACK_BASE_TO_REMOTE:
+            case MSG_SEND_BASE_TO_LOGGER:
+            case MSG_SEND_REMOTE_TO_BASE:
                 uart_rx_send_rfm_from_raw();
                 break;
-           
-
+            default:
+                break;
         }
         uart_p->rx.avail = false;
     }

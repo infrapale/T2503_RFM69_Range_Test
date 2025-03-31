@@ -31,8 +31,9 @@ typedef struct
     uart_cmd_et     cmd;
     msg_format_et   format;
     //msg_format_et   cmd_format;
-    uart_rx_status_et   status;
+    msg_type_et     msg_type;
     radio_et        radio;
+    uint8_t         radio_pwr;
 } uart_rx_st;
 
 typedef struct
@@ -46,7 +47,7 @@ typedef struct
     uart_cmd_et     cmd;
     msg_format_et   format;
     msg_format_et   cmd_format;
-    msg_status_et   status;
+    msg_type_et     msg_type; 
 } uart_tx_st;
 
 typedef struct

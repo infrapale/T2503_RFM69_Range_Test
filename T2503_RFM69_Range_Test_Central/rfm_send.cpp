@@ -4,6 +4,7 @@
 #include <RH_RF69.h>
 #include <SPI.h>
 
+#include "uart.h" 
 #include "rfm69.h"
 #include "rfm_send.h"
 #include "main.h"
@@ -21,18 +22,19 @@ rfm_send_msg_st *rfm_send_get_data_ptr(void)
     return &send_msg;
 }
 
-void rfm_send_radiate_msg( char *radio_msg )
+void rfm_send_radiate_msg( uart_msg_st *uart_msg )
 {
      
-    if (radio_msg[0] != 0)
+    if (uart_msg->rx.radio_msg[0] != 0)
     {
         #ifdef DEBUG_PRINT
         Serial.print("rfm_send_radiate_msg: ");
-        Serial.println(radio_msg);
-        Serial.println( strlen(radio_msg));
+        Serial.println(uart_msg->rx.radio_msg);
+        Serial.println( strlen(uart_msg->rx.radio_msg));
         #endif
+        rf69p->setTxPower(uart_msg->rx.radio_pwr, true);
         rf69p->waitPacketSent();
-        rf69p->send((uint8_t *)radio_msg, strlen(radio_msg));      
+        rf69p->send((uint8_t *)uart_msg->rx.radio_msg, strlen(uart_msg->rx.radio_msg));      
     }
 }
 

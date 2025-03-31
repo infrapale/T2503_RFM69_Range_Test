@@ -17,6 +17,7 @@ rfm_send_msg_st *rfm_send_get_data_ptr(void);
 /// @brief  Send message
 /// @param  message to send
 /// @return
-void rfm_send_radiate_msg( char *radio_msg );
+void rfm_send_radiate_msg( uart_msg_st *uart_msg );
+
 
 #endif
