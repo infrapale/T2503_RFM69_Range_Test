@@ -2,7 +2,7 @@
 #define __MAIN_H__
 
 
-//#define DEBUG_PRINT 
+#define DEBUG_PRINT 
 
 //#define SEND_TEST_MSG 
 //#define ADA_M0_RFM69
