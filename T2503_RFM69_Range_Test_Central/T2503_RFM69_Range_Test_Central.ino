@@ -234,7 +234,42 @@ void setup()
 }
 
 
+void base_state_machine(void)
+{
+  static uint16_t state = 0;
+  static uint16_t new_state = 0;
+  static uint32_t timeout = millis();
 
+  if (state != new_state)
+  {
+    Serial.print(state); Serial.print("-->"); Serial.println(new_state);
+  }
+
+  switch(state)
+  {
+    case 0:
+      new_state = 10
+      break;
+    case 10:
+      new_state = 10
+      break;
+    case 20:
+      new_state = 10
+      break;
+    case 30:
+      new_state = 10
+      break;
+    case 40:
+      new_state = 10
+      break;
+    case 50:
+      new_state = 10
+      break;
+    case 100:
+      new_state = 10
+      break;
+  }
+}
 void loop() 
 {
     //SerialX.println("Hello World"); delay(4000);
@@ -292,7 +327,9 @@ void run_100ms(void)
 
 void debug_print_task(void)
 {
-  // atask_print_status(true);
+  #ifdef DEBUG_PRINT
+  atask_print_status(true);
+  #endif
 }
 
 #ifdef SEND_TEST_MSG
