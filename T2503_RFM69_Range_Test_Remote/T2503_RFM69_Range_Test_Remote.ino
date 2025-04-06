@@ -176,7 +176,7 @@ void initialize_tasks(void)
   atask_initialize();
   atask_add_new(&debug_print_handle);
   atask_add_new(&clock_handle);
-  //atask_add_new(&rfm_receive_handle);
+  atask_add_new(&rfm_receive_handle);
 
   #ifdef SEND_TEST_MSG
   atask_add_new(&send_test_data_handle);
@@ -249,9 +249,9 @@ void remote_state_machine(void)
         new_state = 30;
         break;
       case 30:
-        rfm_receive_message();
         if (rfm_receive_message_is_avail())
         {
+          rfm_receive_message();
           new_state = 40;
           Serial.println("Ack received!");
         }
