@@ -136,15 +136,15 @@ module_data_st  me = {'X','1'};
 
 
 #define NBR_TEST_MSG  4
-#define LEN_TEST_MSG  32
+#define LEN_TEST_MSG  64
 
 // bus_msg = "<,R,{},P,{},#,{},>\n".format(msg['radio'], msg['pwr'], msg['nbr'])
 const char test_msg[NBR_TEST_MSG][LEN_TEST_MSG] =
 {  //12345678901234567890123456789012
-    "<,R,1,P,14,#,345,S,-88,>,\n",
-    "<,R,2,P,5,#,346,S,-80,>,\n",
-    "<,R,3,P,20,#,347,S,-112,>,\n",
-    "<,R,1,P,10,#,348,S,-100,>,\n"
+    "<,B,R,1,P,14,#,345,S,-88,S,-99,>,\n",
+    "<,B,R,2,P,5,#,346,S,-80,S,-99,>,\n",
+    "<,B,R,3,P,20,#,347,S,-112,S,-99,>,\n",
+    "<,B,R,1,P,10,#,348,S,-100,S,-99,>,\n"
 };
 
 void debug_print_task(void);
@@ -176,7 +176,7 @@ void initialize_tasks(void)
   atask_initialize();
   atask_add_new(&debug_print_handle);
   atask_add_new(&clock_handle);
-  atask_add_new(&rfm_receive_handle);
+  //atask_add_new(&rfm_receive_handle);
 
   #ifdef SEND_TEST_MSG
   atask_add_new(&send_test_data_handle);
@@ -223,12 +223,71 @@ void setup()
     #endif
 }
 
+void remote_state_machine(void)
+{
+    static uint16_t state = 0;
+    static uint16_t new_state = 0;
+    static uint32_t timeout = millis();
 
+    if(state != new_state)
+    {
+        Serial.print(state); Serial.print("-->"); Serial.println(new_state);
+        state = new_state;
+    }
+    switch(state)
+    {
+      case 0:
+        new_state = 10;
+        break;
+      case 10:
+        //Serial.println(test_msg[0]);
+        rfm_send_radiate_msg( test_msg[0]);
+        new_state = 20;
+        break;
+      case 20:
+        timeout = millis() + 4000;
+        new_state = 30;
+        break;
+      case 30:
+        rfm_receive_message();
+        if (rfm_receive_message_is_avail())
+        {
+          new_state = 40;
+          Serial.println("Ack received!");
+        }
+        else
+        {
+          if (millis() > timeout)
+          {
+            Serial.println("Timeout");
+            new_state = 100;
+          }
+        }
+
+        break;
+      case 40:
+        timeout = millis() + 6000;
+        new_state = 50;
+        break;
+      case 50:
+        if (millis() > timeout)
+        {
+          new_state = 0;
+        }
+        break;
+      case 100:
+        new_state = 0;
+        break;
+
+    }
+
+}
 
 void loop() 
 {
     //SerialX.println("Hello World"); delay(4000);
     atask_run();  
+    remote_state_machine();
 }
 
 
@@ -271,7 +330,9 @@ void run_100ms(void)
 
 void debug_print_task(void)
 {
-  // atask_print_status(true);
+  #ifdef DEBUG_PRINT 
+  atask_print_status(true);
+  #endif
 }
 
 #ifdef SEND_TEST_MSG
